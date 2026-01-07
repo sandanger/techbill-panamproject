@@ -97,7 +97,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
              <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
                 Developed by <span className="text-slate-600 font-bold">CENTRAL</span> by Santiago Rojas
              </p>
-             <span className="text-[9px] text-slate-300 font-mono">v1.1 System Online</span>
+             <span className="text-[9px] text-slate-300 font-mono">v2.0 Clean Install</span>
         </div>
 
       </div>

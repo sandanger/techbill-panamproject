@@ -1,21 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { ServiceRecord } from '../types';
 import { formatCurrency, toInputDate, fromInputDate } from '../utils';
-import { X, Save, Calculator, FileText, DollarSign, Briefcase, Percent, CheckCircle, ChevronDown, MessageSquare } from 'lucide-react';
+import { X, Save, Calculator, FileText, DollarSign, Briefcase, Percent, CheckCircle, ChevronDown, MessageSquare, Trash2, AlertTriangle } from 'lucide-react';
 
 interface BillingModalProps {
   record: ServiceRecord | null;
   onClose: () => void;
   onSave: (updatedRecord: ServiceRecord) => void;
+  onDelete: (id: string) => void;
   isNew?: boolean;
 }
 
-const BillingModal: React.FC<BillingModalProps> = ({ record, onClose, onSave, isNew }) => {
+const BillingModal: React.FC<BillingModalProps> = ({ record, onClose, onSave, onDelete, isNew }) => {
   const [formData, setFormData] = useState<ServiceRecord | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (record) {
       setFormData({ ...record });
+      setShowDeleteConfirm(false); // Reset delete confirmation state when opening new record
     }
   }, [record]);
 
@@ -256,17 +259,55 @@ const BillingModal: React.FC<BillingModalProps> = ({ record, onClose, onSave, is
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-200 bg-white flex justify-end items-center gap-3">
-            <button onClick={onClose} className="px-5 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-colors">
-              Cancelar
-            </button>
-            <button 
-                onClick={() => onSave(formData)}
-                className="px-6 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 shadow-lg shadow-emerald-500/30 flex items-center gap-2 transition-transform active:scale-95"
-            >
-              <Save size={18} />
-              {isNew ? 'Crear Servicio' : 'Guardar Cambios'}
-            </button>
+        <div className="p-4 border-t border-slate-200 bg-white flex flex-col sm:flex-row justify-between items-center gap-4">
+            
+            {/* Delete Logic (Left Side) */}
+            <div>
+              {!isNew && (
+                showDeleteConfirm ? (
+                  <div className="flex items-center gap-3 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 animate-in fade-in slide-in-from-left-4">
+                    <span className="text-xs font-bold text-red-600 flex items-center gap-1">
+                      <AlertTriangle size={14} /> ¿Estás seguro?
+                    </span>
+                    <button 
+                      onClick={() => onDelete(formData.id)}
+                      className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded hover:bg-red-700 transition-colors"
+                    >
+                      Sí, Eliminar
+                    </button>
+                    <button 
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="px-2 py-1 text-slate-500 hover:text-slate-800 text-xs font-medium"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="flex items-center gap-2 text-red-400 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg transition-all text-sm font-medium"
+                    title="Eliminar este servicio"
+                  >
+                    <Trash2 size={18} />
+                    <span className="hidden sm:inline">Eliminar</span>
+                  </button>
+                )
+              )}
+            </div>
+
+            {/* Save/Cancel Logic (Right Side) */}
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+              <button onClick={onClose} className="px-5 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-colors">
+                Cancelar
+              </button>
+              <button 
+                  onClick={() => onSave(formData)}
+                  className="px-6 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 shadow-lg shadow-emerald-500/30 flex items-center gap-2 transition-transform active:scale-95"
+              >
+                <Save size={18} />
+                {isNew ? 'Crear Servicio' : 'Guardar Cambios'}
+              </button>
+            </div>
         </div>
       </div>
     </div>

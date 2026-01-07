@@ -135,6 +135,32 @@ const App: React.FC = () => {
     setIsNewRecord(true);
   };
 
+  const handleDeleteRecord = async (id: string) => {
+    if (!id) return;
+
+    // 1. Optimistic UI Update (Remove immediately from list)
+    const prevData = [...data];
+    const newData = data.filter(item => item.id !== id);
+    setData(newData);
+    setSelectedRecord(null); // Close modal
+
+    // 2. Persistence
+    if (!supabase) {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newData));
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('services').delete().eq('id', id);
+      if (error) throw error;
+    } catch (err: any) {
+      console.error("Error deleting from DB:", err);
+      alert("Error eliminando el registro de la nube. Por favor recargue la página.");
+      // Rollback logic could go here, but for now we warn the user
+      fetchServices(); 
+    }
+  };
+
   const handleSaveRecord = async (updatedRecord: ServiceRecord) => {
     // Optimistic Update (Update UI immediately)
     const prevData = [...data];
@@ -175,7 +201,6 @@ const App: React.FC = () => {
         console.error("Error saving to DB:", err);
         // Show specific error message for easier debugging
         alert(`Error guardando en la nube: ${err.message || 'Error desconocido'}`);
-        // Optionally revert state here if needed
     }
   };
 
@@ -256,6 +281,7 @@ const App: React.FC = () => {
         record={selectedRecord} 
         onClose={() => setSelectedRecord(null)} 
         onSave={handleSaveRecord}
+        onDelete={handleDeleteRecord}
         isNew={isNewRecord}
       />
     </div>
