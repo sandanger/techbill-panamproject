@@ -1,0 +1,5 @@
+{
+  "name": "techbill-panamproject",
+  "description": "A specialized billing and settlement tool for technician service orders, featuring automatic calculation of balances, tax deductions, and operational dashboards.",
+  "requestFramePermissions": []
+}
