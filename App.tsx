@@ -171,10 +171,11 @@ const App: React.FC = () => {
                 .eq('id', updatedRecord.id);
             if (error) throw error;
         }
-    } catch (err) {
+    } catch (err: any) {
         console.error("Error saving to DB:", err);
-        alert("Error guardando en la nube. Verifique su conexión.");
-        // Revert on error could be done here, but kept simple for now
+        // Show specific error message for easier debugging
+        alert(`Error guardando en la nube: ${err.message || 'Error desconocido'}`);
+        // Optionally revert state here if needed
     }
   };
 
