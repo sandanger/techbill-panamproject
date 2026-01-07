@@ -82,10 +82,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </div>
 
         {/* Footer Credit */}
-        <div className="bg-slate-50 p-4 text-center border-t border-slate-100">
+        <div className="bg-slate-50 p-4 text-center border-t border-slate-100 flex flex-col gap-1">
              <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
                 Developed by <span className="text-slate-600 font-bold">CENTRAL</span> by Santiago Rojas
              </p>
+             <span className="text-[9px] text-slate-300 font-mono">v1.1 System Online</span>
         </div>
 
       </div>
