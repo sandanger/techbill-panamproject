@@ -6,7 +6,7 @@ import BillingModal from './components/BillingModal';
 import Login from './components/Login';
 import { MOCK_DATA } from './services/mockData';
 import { ServiceRecord, ViewMode } from './types';
-import { Plus, Loader2, Database } from 'lucide-react';
+import { Plus, Loader2, Database, WifiOff } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 
 // Default empty record for creation
@@ -41,6 +41,7 @@ const EMPTY_RECORD: ServiceRecord = {
 };
 
 const AUTH_STORAGE_KEY = 'panamproject_auth';
+const LOCAL_STORAGE_KEY = 'panamproject_db_v1'; // Fallback for offline mode
 
 const App: React.FC = () => {
   // --- AUTHENTICATION STATE ---
@@ -55,9 +56,28 @@ const App: React.FC = () => {
   const [selectedRecord, setSelectedRecord] = useState<ServiceRecord | null>(null);
   const [isNewRecord, setIsNewRecord] = useState(false);
 
-  // --- SUPABASE FETCH ---
+  // --- DATA FETCH ---
   const fetchServices = async () => {
     setIsLoading(true);
+
+    // 1. If Supabase is NOT configured (null), use LocalStorage/Mock
+    if (!supabase) {
+      console.warn("Supabase no configurado. Usando modo Local/Mock.");
+      const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (localData) {
+        try {
+          setData(JSON.parse(localData));
+        } catch {
+          setData(MOCK_DATA);
+        }
+      } else {
+        setData(MOCK_DATA);
+      }
+      setIsLoading(false);
+      return;
+    }
+
+    // 2. If Supabase IS configured, fetch from Cloud
     try {
       const { data: services, error } = await supabase
         .from('services')
@@ -66,19 +86,19 @@ const App: React.FC = () => {
 
       if (error) {
         console.error('Error fetching data:', error);
-        // Fallback to empty if connection fails (or user hasn't set keys)
+        // Fallback to empty if connection fails
         if (data.length === 0) setData(MOCK_DATA); 
       } else {
         if (services && services.length > 0) {
             setData(services as ServiceRecord[]);
         } else {
-             // If DB is empty, maybe init with MOCK for demo? 
-             // Or keep empty. Let's keep empty for production feel.
              setData([]); 
         }
       }
     } catch (err) {
       console.error("Connection error:", err);
+      // Fallback
+      if (data.length === 0) setData(MOCK_DATA);
     } finally {
       setIsLoading(false);
     }
@@ -118,16 +138,26 @@ const App: React.FC = () => {
   const handleSaveRecord = async (updatedRecord: ServiceRecord) => {
     // Optimistic Update (Update UI immediately)
     const prevData = [...data];
+    let newData: ServiceRecord[] = [];
     
     if (isNewRecord) {
-      setData(prev => [updatedRecord, ...prev]);
+      newData = [updatedRecord, ...prevData];
     } else {
-      setData(prevData => prevData.map(item => item.id === updatedRecord.id ? updatedRecord : item));
+      newData = prevData.map(item => item.id === updatedRecord.id ? updatedRecord : item);
     }
+    
+    setData(newData);
     
     // Close modal immediately
     setSelectedRecord(null);
     setIsNewRecord(false);
+
+    // PERSISTENCE LOGIC
+    if (!supabase) {
+        // Fallback: Save to LocalStorage if no DB
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newData));
+        return;
+    }
 
     // DB Update in Background
     try {
@@ -135,9 +165,6 @@ const App: React.FC = () => {
             const { error } = await supabase.from('services').insert([updatedRecord]);
             if (error) throw error;
         } else {
-            // Remove helper fields if they don't exist in DB columns, 
-            // but our SQL schema matches types, so we send the whole object.
-            // Note: Supabase ignores extra fields usually, but cleaner to be precise.
             const { error } = await supabase
                 .from('services')
                 .update(updatedRecord)
@@ -147,8 +174,7 @@ const App: React.FC = () => {
     } catch (err) {
         console.error("Error saving to DB:", err);
         alert("Error guardando en la nube. Verifique su conexión.");
-        // Revert on error
-        setData(prevData); 
+        // Revert on error could be done here, but kept simple for now
     }
   };
 
@@ -174,13 +200,19 @@ const App: React.FC = () => {
             </h1>
             <p className="text-slate-500 text-sm mt-1 flex items-center gap-2">
               Bienvenido a <span className="font-semibold text-blue-600">Panamproject</span>.
+              
+              {/* Status Indicator */}
               {isLoading ? (
                   <span className="flex items-center gap-1 text-xs text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                     <Loader2 size={10} className="animate-spin" /> Conectando...
                   </span>
-              ) : (
+              ) : supabase ? (
                    <span className="flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                     <Database size={10} /> En Línea
+                  </span>
+              ) : (
+                  <span className="flex items-center gap-1 text-xs text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full border border-slate-300">
+                    <WifiOff size={10} /> Modo Local
                   </span>
               )}
             </p>

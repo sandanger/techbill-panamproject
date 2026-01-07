@@ -1,11 +1,30 @@
 import { createClient } from '@supabase/supabase-js';
 
-// NOTA: Cuando despliegues en Vercel, estas variables deben configurarse en 
-// Settings -> Environment Variables.
-// Por ahora, para pruebas locales, puedes pegar tus claves aquí directamente 
-// (aunque no es recomendable subirlas a GitHub así).
+// Con Vite, la forma estándar de acceder a variables es import.meta.env
+// Gracias a la configuración en vite.config.ts, podemos leer REACT_APP_
+const getEnvVar = (key: string) => {
+  // @ts-ignore
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    // @ts-ignore
+    return import.meta.env[key] || '';
+  }
+  return '';
+};
 
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'TU_SUPABASE_URL_AQUI';
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'TU_SUPABASE_ANON_KEY_AQUI';
+const supabaseUrl = getEnvVar('REACT_APP_SUPABASE_URL');
+const supabaseAnonKey = getEnvVar('REACT_APP_SUPABASE_ANON_KEY');
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Validate URL format
+const isValidUrl = (url: string | null) => {
+  if (!url || url.includes('TU_SUPABASE_URL')) return false;
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const supabase = (isValidUrl(supabaseUrl) && supabaseAnonKey)
+  ? createClient(supabaseUrl!, supabaseAnonKey!)
+  : null;
