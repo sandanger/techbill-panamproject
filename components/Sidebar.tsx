@@ -16,11 +16,21 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onLogout }
 
   return (
     <div className="w-64 bg-slate-900 text-white flex flex-col h-screen fixed left-0 top-0 z-10 shadow-xl border-r border-slate-800">
+      
+      {/* Header with Logo */}
       <div className="p-6 border-b border-slate-800">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-teal-400 bg-clip-text text-transparent">
-          Panamproject
-        </h1>
-        <p className="text-xs text-slate-400 mt-1">Gestión de Ordenes</p>
+        <div className="bg-white rounded-lg p-3 flex items-center justify-center shadow-inner mb-2">
+             <img 
+                src="/logo.png" 
+                alt="Panamproject" 
+                className="h-10 w-auto object-contain"
+                onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement!.innerHTML = '<span class="text-blue-800 font-bold text-sm">PANAMPROJECT</span>';
+                }}
+             />
+        </div>
+        <p className="text-[10px] text-slate-500 text-center uppercase tracking-wider">Gestión de Ordenes</p>
       </div>
       
       <nav className="flex-1 p-4 space-y-2">

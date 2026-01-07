@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, User, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Lock, User, ArrowRight } from 'lucide-react';
 
 interface LoginProps {
   onLogin: () => void;
@@ -23,17 +23,28 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
         
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-teal-500 p-8 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4 backdrop-blur-sm text-white border-2 border-white/30">
-                <ShieldCheck size={32} />
+        {/* Header - Changed to White to accommodate the Logo */}
+        <div className="bg-white p-8 text-center border-b border-slate-100">
+            <div className="flex justify-center mb-4">
+                {/* Logo Image */}
+                <img 
+                    src="/logo.png" 
+                    alt="Panamproject Logo" 
+                    className="h-20 w-auto object-contain"
+                    onError={(e) => {
+                        // Fallback text if image is missing
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
+                />
+                {/* Fallback Title (Hidden by default unless image fails) */}
+                <h1 className="hidden text-2xl font-bold text-blue-700 tracking-wide">PANAMPROJECT</h1>
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-wide">Panamproject</h1>
-            <p className="text-blue-100 text-sm mt-1">Sistema de Gestión de Facturación</p>
+            <p className="text-slate-500 text-sm font-medium">Sistema de Gestión de Facturación</p>
         </div>
 
         {/* Form */}
-        <div className="p-8">
+        <div className="p-8 bg-slate-50/50">
             <form onSubmit={handleSubmit} className="space-y-6">
                 
                 <div>
@@ -42,7 +53,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                         <input 
                             type="text" 
-                            className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                            className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"
                             placeholder="Ingrese su usuario"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
@@ -56,7 +67,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                         <input 
                             type="password" 
-                            className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                            className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"
                             placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -73,7 +84,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
                 <button 
                     type="submit" 
-                    className="w-full bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95"
+                    className="w-full bg-blue-700 text-white py-3 rounded-lg font-bold hover:bg-blue-800 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20 active:scale-95"
                 >
                     Ingresar al Sistema
                     <ArrowRight size={18} />
@@ -82,7 +93,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </div>
 
         {/* Footer Credit */}
-        <div className="bg-slate-50 p-4 text-center border-t border-slate-100 flex flex-col gap-1">
+        <div className="bg-white p-4 text-center border-t border-slate-100 flex flex-col gap-1">
              <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
                 Developed by <span className="text-slate-600 font-bold">CENTRAL</span> by Santiago Rojas
              </p>
