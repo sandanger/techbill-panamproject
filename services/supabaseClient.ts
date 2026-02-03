@@ -1,9 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
 // En Vite, las variables de entorno deben empezar por VITE_
-// Fix: Cast import.meta to any to avoid "Property 'env' does not exist on type 'ImportMeta'" and remove missing vite/client reference
-const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL;
-const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY;
+// Fix: Safely access env to avoid "Cannot read properties of undefined" if import.meta.env is missing
+const env = (import.meta as any).env || {};
+
+const supabaseUrl = env.VITE_SUPABASE_URL;
+const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY;
 
 console.log("Intentando conectar a Supabase:", supabaseUrl ? "URL OK" : "Falta URL");
 
