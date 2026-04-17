@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ServiceRecord } from '../types';
 import { formatCurrency, toInputDate, fromInputDate } from '../utils';
-import { X, Save, Calculator, FileText, DollarSign, Briefcase, Percent, CheckCircle, ChevronDown, MessageSquare, Trash2, AlertTriangle } from 'lucide-react';
+import { X, Save, Calculator, FileText, DollarSign, Briefcase, Percent, CheckCircle, ChevronDown, MessageSquare, Trash2, AlertTriangle, Plus } from 'lucide-react';
 
 interface BillingModalProps {
   record: ServiceRecord | null;
@@ -16,7 +16,7 @@ const BillingModal: React.FC<BillingModalProps> = ({ record, onClose, onSave, on
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const OTHER_SERVICE_OPTIONS = [
-    "Alquier de semoviente",
+    "Alquiler de semoviente",
     "Acompañamiento de seguridad",
     "Expreso 4x4",
     "Expreso fluvial",
