@@ -25,32 +25,41 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ data, onEdit }) => {
     status: ''
   });
 
-  // Combined Filtering Logic
+  const [sortConfig, setSortConfig] = useState<{ key: keyof ServiceRecord; direction: 'asc' | 'desc' } | null>({
+    key: 'date',
+    direction: 'desc'
+  });
+
+  // Combined Filtering and Sorting Logic
   const filteredData = data.filter(item => {
     // 1. Global Search
     const matchesSearch = 
       item.caseId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.beneficiary.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.department.toLowerCase().includes(searchTerm.toLowerCase());
+      item.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.cliente && item.cliente.toLowerCase().includes(searchTerm.toLowerCase()));
 
     if (!matchesSearch) return false;
 
     // 2. Date Range Logic
     if (startDate || endDate) {
-      const [day, month, year] = item.date.split('/').map(Number);
-      const itemDate = new Date(year, month - 1, day);
-      itemDate.setHours(0, 0, 0, 0);
+      const parts = item.date.split('/');
+      if (parts.length === 3) {
+        const [day, month, year] = parts.map(Number);
+        const itemDate = new Date(year, month - 1, day);
+        itemDate.setHours(0, 0, 0, 0);
 
-      if (startDate) {
-        const [sY, sM, sD] = startDate.split('-').map(Number);
-        const start = new Date(sY, sM - 1, sD);
-        if (itemDate < start) return false;
-      }
+        if (startDate) {
+          const [sY, sM, sD] = startDate.split('-').map(Number);
+          const start = new Date(sY, sM - 1, sD);
+          if (itemDate < start) return false;
+        }
 
-      if (endDate) {
-        const [eY, eM, eD] = endDate.split('-').map(Number);
-        const end = new Date(eY, eM - 1, eD);
-        if (itemDate > end) return false;
+        if (endDate) {
+          const [eY, eM, eD] = endDate.split('-').map(Number);
+          const end = new Date(eY, eM - 1, eD);
+          if (itemDate > end) return false;
+        }
       }
     }
 
@@ -64,7 +73,43 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ data, onEdit }) => {
     }
 
     return true;
+  }).sort((a, b) => {
+    if (!sortConfig) return 0;
+    
+    const { key, direction } = sortConfig;
+    const valA = a[key];
+    const valB = b[key];
+
+    if (valA === valB) return 0;
+
+    const multiplier = direction === 'asc' ? 1 : -1;
+
+    if (key === 'date') {
+      const [dA, mA, yA] = a.date.split('/').map(Number);
+      const [dB, mB, yB] = b.date.split('/').map(Number);
+      const dateA = new Date(yA, mA - 1, dA).getTime();
+      const dateB = new Date(yB, mB - 1, dB).getTime();
+      return (dateA - dateB) * multiplier;
+    }
+
+    if (typeof valA === 'string' && typeof valB === 'string') {
+      return valA.localeCompare(valB) * multiplier;
+    }
+
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      return (valA - valB) * multiplier;
+    }
+
+    return 0;
   });
+
+  const handleSort = (key: keyof ServiceRecord) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
 
   const getStatusColor = (status: string) => {
     switch(status) {
@@ -95,6 +140,8 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ data, onEdit }) => {
       { label: 'Municipio', key: 'municipality' },
       { label: 'Dificultad (DDA)', key: 'difficulty' },
       { label: 'Beneficiario', key: 'beneficiary' },
+      { label: 'Cliente', key: 'cliente' },
+      { label: 'Tipo Antena', key: 'tipoAntena' },
       { label: 'Fecha', key: 'date' },
       { label: 'Acta', key: 'acta' },
       // Financials
@@ -103,6 +150,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ data, onEdit }) => {
       { label: 'Visita Fallida', key: 'valueFailedVisit' },
       { label: 'Obras Civiles', key: 'valueCivilWorks' },
       { label: 'Transportes', key: 'valueTransport' },
+      { label: 'Otros Servicios', key: 'additionalServices' },
       { label: 'Subtotal Servicio', key: 'subtotalService' },
       { label: 'Total Servicio', key: 'totalService' },
       // Taxes
@@ -124,8 +172,14 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ data, onEdit }) => {
     
     const rows = filteredData.map(record => {
       return columns.map(col => {
-        const val = record[col.key as keyof ServiceRecord];
+        let val = record[col.key as keyof ServiceRecord];
         
+        // Handle special cases
+        if (col.key === 'additionalServices') {
+          const services = val as Array<{name: string, value: number}>;
+          val = services?.map(s => `${s.name}: ${s.value}`).join(' | ') || '';
+        }
+
         // Handle numbers (preserve them for excel formulas) and strings (quote them)
         if (typeof val === 'number') {
             return val.toString();
@@ -233,12 +287,32 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ data, onEdit }) => {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Caso / Fecha</th>
-              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Servicio</th>
+              <th 
+                className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
+                onClick={() => handleSort('caseId')}
+              >
+                Caso / Fecha {sortConfig?.key === 'caseId' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </th>
+              <th 
+                className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
+                onClick={() => handleSort('serviceType')}
+              >
+                Servicio {sortConfig?.key === 'serviceType' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </th>
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Ubicación</th>
-              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Beneficiario</th>
+              <th 
+                className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
+                onClick={() => handleSort('beneficiary')}
+              >
+                Beneficiario {sortConfig?.key === 'beneficiary' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </th>
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Anticipo</th>
-              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Saldo Final</th>
+              <th 
+                className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
+                onClick={() => handleSort('balanceToPay')}
+              >
+                Saldo Final {sortConfig?.key === 'balanceToPay' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </th>
               <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Estado</th>
             </tr>
             {/* Column Filter Row */}

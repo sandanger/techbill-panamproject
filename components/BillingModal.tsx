@@ -15,6 +15,19 @@ const BillingModal: React.FC<BillingModalProps> = ({ record, onClose, onSave, on
   const [formData, setFormData] = useState<ServiceRecord | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  const OTHER_SERVICE_OPTIONS = [
+    "Alquier de semoviente",
+    "Acompañamiento de seguridad",
+    "Expreso 4x4",
+    "Expreso fluvial",
+    "Expreso moto",
+    "Alquiler de planta",
+    "Transporte de planta",
+    "Tala de árboles",
+    "Materiales Obra Civil",
+    "Mano de Obra Civil"
+  ];
+
   useEffect(() => {
     if (record) {
       setFormData({ ...record });
@@ -27,11 +40,14 @@ const BillingModal: React.FC<BillingModalProps> = ({ record, onClose, onSave, on
   // --- BUSINESS LOGIC: CALCULATION ENGINE ---
   const calculateTotals = () => {
     // MODULO 3 LOGIC
+    const additionalServicesTotal = (formData.additionalServices || []).reduce((acc, curr) => acc + (curr.value || 0), 0);
+
     const incomeNoTransport = 
       (formData.valueLabor || 0) +
       (formData.valueAdditionalDay || 0) +
       (formData.valueFailedVisit || 0) +
-      (formData.valueCivilWorks || 0);
+      (formData.valueCivilWorks || 0) +
+      additionalServicesTotal;
 
     const transport = formData.valueTransport || 0;
     
@@ -109,15 +125,13 @@ const BillingModal: React.FC<BillingModalProps> = ({ record, onClose, onSave, on
               <FileText size={18} /> Módulo 1: Descripción del Servicio
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <InputField label="Caso" value={formData.caseId} onChange={(v) => handleChange('caseId', v)} />
-              <InputField label="Orden" value={formData.orderDescription} onChange={(v) => handleChange('orderDescription', v)} />
-              <InputField label="Servicio" value={formData.serviceType} onChange={(v) => handleChange('serviceType', v)} />
-              <InputField label="Acta" value={formData.acta} onChange={(v) => handleChange('acta', v)} />
-              
+              <InputField label="Tipo de Servicio" value={formData.serviceType} onChange={(v) => handleChange('serviceType', v)} />
               <InputField label="Departamento" value={formData.department} onChange={(v) => handleChange('department', v)} />
               <InputField label="Municipio" value={formData.municipality} onChange={(v) => handleChange('municipality', v)} />
               <InputField label="DDA (Dificultad)" value={formData.difficulty} onChange={(v) => handleChange('difficulty', v)} />
-              
+
+              <InputField label="Cliente" value={formData.cliente} onChange={(v) => handleChange('cliente', v)} />
+              <InputField label="Tipo de Antena" value={formData.tipoAntena} onChange={(v) => handleChange('tipoAntena', v)} />
               <InputField label="Beneficiario" value={formData.beneficiary} onChange={(v) => handleChange('beneficiary', v)} />
               
               <div className="flex flex-col gap-1">
@@ -129,6 +143,10 @@ const BillingModal: React.FC<BillingModalProps> = ({ record, onClose, onSave, on
                   onChange={(e) => handleDateChange(e.target.value)}
                 />
               </div>
+
+              <InputField label="Caso" value={formData.caseId} onChange={(v) => handleChange('caseId', v)} />
+              <InputField label="Orden" value={formData.orderDescription} onChange={(v) => handleChange('orderDescription', v)} />
+              <InputField label="Acta" value={formData.acta} onChange={(v) => handleChange('acta', v)} />
             </div>
           </section>
 
@@ -167,20 +185,92 @@ const BillingModal: React.FC<BillingModalProps> = ({ record, onClose, onSave, on
             <h3 className="text-sm font-bold text-emerald-600 uppercase mb-4 flex items-center gap-2 border-b border-emerald-100 pb-2">
               <Calculator size={18} /> Módulo 3: Facturación Servicio
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4 mb-6">
                <MoneyInput label="Valor Labor (Inst/Mant/Mig/Desins)" value={formData.valueLabor} onChange={(v) => handleNumChange('valueLabor', v)} />
                <MoneyInput label="Día Adicional" value={formData.valueAdditionalDay} onChange={(v) => handleNumChange('valueAdditionalDay', v)} />
                <MoneyInput label="Visita Fallida" value={formData.valueFailedVisit} onChange={(v) => handleNumChange('valueFailedVisit', v)} />
                <MoneyInput label="Obras Civiles - Otros" value={formData.valueCivilWorks} onChange={(v) => handleNumChange('valueCivilWorks', v)} />
                <MoneyInput label="Transportes Excedentes Leg." value={formData.valueTransport} onChange={(v) => handleNumChange('valueTransport', v)} />
-               
+            </div>
+
+            {/* Additional Services (Otros) */}
+            <div className="bg-emerald-50/50 p-4 rounded-lg border border-emerald-100 mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="text-xs font-bold text-emerald-700 uppercase flex items-center gap-2">
+                  <Plus size={14} /> Servicios Adicionales (Otros)
+                </h4>
+                <button 
+                  onClick={() => {
+                    const current = formData.additionalServices || [];
+                    handleChange('additionalServices', [...current, { name: OTHER_SERVICE_OPTIONS[0], value: 0 }]);
+                  }}
+                  className="text-[10px] bg-emerald-600 text-white px-2 py-1 rounded hover:bg-emerald-700 transition-colors uppercase font-bold"
+                >
+                  Agregar Otro
+                </button>
+              </div>
+
+              {(!formData.additionalServices || formData.additionalServices.length === 0) ? (
+                <div className="text-center py-4 text-xs text-slate-400 italic bg-white/50 rounded border border-dashed border-emerald-200">
+                  No hay servicios adicionales agregados
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {formData.additionalServices.map((service, index) => (
+                    <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end animate-in fade-in slide-in-from-top-1">
+                      <div className="sm:col-span-7 flex flex-col gap-1">
+                        <label className="text-[10px] font-semibold text-emerald-600 uppercase">Concepto</label>
+                        <select 
+                          className="w-full px-3 py-1.5 border border-emerald-200 rounded text-sm bg-white"
+                          value={service.name}
+                          onChange={(e) => {
+                            const updated = [...formData.additionalServices];
+                            updated[index].name = e.target.value;
+                            handleChange('additionalServices', updated);
+                          }}
+                        >
+                          {OTHER_SERVICE_OPTIONS.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="sm:col-span-4">
+                        <MoneyInput 
+                          label="Valor" 
+                          value={service.value} 
+                          onChange={(v) => {
+                            const updated = [...formData.additionalServices];
+                            updated[index].value = v === '' ? 0 : parseFloat(v);
+                            handleChange('additionalServices', updated);
+                          }} 
+                        />
+                      </div>
+                      <div className="sm:col-span-1 flex justify-center pb-1">
+                        <button 
+                          onClick={() => {
+                            const updated = formData.additionalServices.filter((_, i) => i !== index);
+                            handleChange('additionalServices', updated);
+                          }}
+                          className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                {/* Calculated Fields for M3 */}
                <div className="p-3 bg-slate-50 rounded border border-slate-200 flex justify-between items-center md:col-span-2 lg:col-span-1">
-                 <span className="text-xs font-semibold text-slate-600">Subtotal (Sin Transp.)</span>
+                 <span className="text-xs font-semibold text-slate-600">Subtotal (Servicios s/ Transp.)</span>
                  <span className="font-mono font-bold text-slate-800">{formatCurrency(formData.subtotalService)}</span>
                </div>
                
-               <div className="md:col-span-3 mt-2 pt-2 border-t border-dashed border-emerald-200 flex justify-end items-center gap-4">
+               <div className="lg:col-span-2 flex justify-end items-center gap-4">
                   <span className="text-sm font-bold text-emerald-800 uppercase">Total Servicio (Módulo 3):</span>
                   <span className="text-xl font-bold text-emerald-600 bg-emerald-50 px-4 py-1 rounded">{formatCurrency(formData.totalService)}</span>
                </div>

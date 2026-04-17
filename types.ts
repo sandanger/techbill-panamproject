@@ -10,6 +10,8 @@ export interface ServiceRecord {
   beneficiary: string; // "Nombre Beneficiario"
   date: string; // "Fecha"
   acta: string; // "Acta" (New)
+  cliente: string; // "Cliente" (New)
+  tipoAntena: string; // "Tipo de Antena" (New)
   
   // Module 2: Advances
   advanceAmount: number; // "Valor Anticipo"
@@ -20,6 +22,7 @@ export interface ServiceRecord {
   valueFailedVisit: number; // "Visita Fallida"
   valueCivilWorks: number; // "Obras civiles"
   valueTransport: number; // "Transportes Excedentes"
+  additionalServices: Array<{ name: string; value: number }>; // "Otros Servicios" (New)
   
   // Module 4: Taxes
   iva: number; // "Iva 19%"
